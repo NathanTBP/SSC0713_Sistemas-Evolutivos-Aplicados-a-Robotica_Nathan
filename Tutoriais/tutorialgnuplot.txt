@@ -1,1 +1,81 @@
-bb
+Como utilizar o GNUplot para fazer belos gráficos para seus programas em C:
+
+O GNUplot é uma ferramenta open source que funciona por linhas de comando, 
+e pode fazer gráficos estilizados e bem completos com diferentes conjuntos de dados.
+
+INTALACAO LINUX
+
+Para instalá-lo basta usar o comando: sudo apt install gnuplot
+
+Para testar, basta digitar gnuplot no terminal e se quando a janela aparecer, diigte plot sin(x) para ver se está tudo certinho.
+
+UTILIZAÇÃO
+
+Para que o GNUplot faça um gráfico é necessário dar a ele uma série de comandos de forma a personalizar o seu gráfico.
+
+Para alterar o título do gráfico, use:
+
+set title 'Titulo do seu Grafico' 
+
+Para alterar os nomes do eixo x e eixo y, use:
+
+set xlabel 'Nomedoeixox' 
+set ylabel 'Nomedoeixoy'
+
+Para plotar um gráfico use:
+
+plot 'nomedoarquivodeentrada.txt' title 'nomedodadosendorepresentado' with lines
+
+OBS: esse arquivo de entrada deve estar no formato X Y\n para cada ponto no gráfico
+OBS2: a clausa with lines é para o gráfico ficar com linhas e não apenas pontos (outros comandos possiveis disponiveis na página 100 da documentação)
+
+para plotar + de um gráfico na mesma janela, basta adicionar uma virgula no final do comando e plotar outro comando 
+
+Ex:
+
+plot 'nomedoarquivodeentrada.txt' title 'nomedodadosendorepresentado' with lines, plot 'nomedoarquivodeentrada2.txt' title 'nomedodadosendorepresentado2' with lines
+
+Existem N opções de customização: cores, formatos. Para um gráfico + bonito, a série de videos no yt https://www.youtube.com/watch?v=9QUtcfyBFhE deve ajudar.
+
+DICAS PARA PROGRAMA EM C
+
+Para que o GNUplot funcione adequadamente atendendo comandos de um programa em c, é necessário abrir
+um ponteiro file com a função popen (pipe open).
+
+Ex: 
+FILE* ponteirognuplot = NULL;
+comandosgnuplot=popen("gnuplot -persist","w");
+    if (comandosgnuplot == NULL) { printf("Erro ao abrir pipe para o GNU plot.\nInstale com 'sudo apt-get install gnuplot'\n"); exit(1);}
+
+OBS: a clausula -persist faz com que os gráficos não sejam fechados quando seu programa em C se encerrar, já o modo de escrita "w" permite que você escreva comandos.
+
+OBS2: lembre-se de fechar o arquivo com fclose(comandosgnuplot) no fim do programa.
+
+Após aberto, o programa só vai aceitar os dados após a utilização de um fflush(comandosgnuplot) que vai funcionar como um botão de start para os comandos que você inserir.
+
+Um exemplo, para plotar um grafico simples, após abrir o arquivo bastar usar fprintf("%s",entrada); sendo a entrada qualquer coisa citada no tópico de UTILIZAÇÃO (basta separar dois comandos por \n).
+
+OBS: Se o seu programa está produzindo dados em tempo real, lembre-se de dar um fflush no arquivo a ser plotado, para que os dados sejam de fato colocados nele e possam ser lidos pelo GNUPLOT.
+
+DICAS PARA WINDOWS:
+
+Windows não tem um suporte direto a tais tipos de comando. Para isso existe como instalar um terminal de linux dentro do seu windows.
+
+Um tutorial para instalar segue aqui https://docs.microsoft.com/pt-br/windows/wsl/install-win10. Dica: instale o wsl2, é bem mais estável e possui features melhores.
+
+Muitas vezes, o gnuplot não será mostrado na sua tela com um erro que diz algo do tipo "Tela não encontrada" para isso, eu uso um programa chamado VcXsrv
+link para download do VcXsrv https://sourceforge.net/projects/vcxsrv/
+
+Ao abrir o vcxsrv, selecione multiple windows,start no client,clipboard e memory selection,concluir
+
+E ao abrir o terminal do wsl execute o comando "export DISPLAY=localhost:0"
+
+para testar se está tudo funcionando, use o comando xeyes (é de uma biblioteca comum de linux, se não estiver instalada, pode usar apt-get install x11-apps)
+
+Por fim o seu programa deve funcionar.
+
+OBS: tudo funciona bem no Visual Code com WSL, qualquer dúvida ou erro pode entrar em contato comigo via nathanro@usp.br
+
+Link para a documentação completa do GNUPLOT: http://www.gnuplot.info/docs_5.0/gnuplot.pdf
+
+Link para demonstrações de gráficos (basta clicar no link mais adequado): http://gnuplot.sourceforge.net/demo_5.0/
