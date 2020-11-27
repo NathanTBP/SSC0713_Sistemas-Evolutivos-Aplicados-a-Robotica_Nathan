@@ -23,6 +23,7 @@ double PORCENTAGEM_DE_MUTACAO = INICIAL_PORCENTAGEM_DE_MUTACAO ;
 struct mediaefit_{
     double media;
     double melhor;
+    double fitmelhor;
 };
 
 typedef struct mediaefit_ MEDIAEFIT;
@@ -131,25 +132,26 @@ MEDIAEFIT busca_melhor(double* populacao,int tamanhodapopulacao){
 
     MEDIAEFIT mediaefit;
 
-    mediaefit.melhor=-1*INFINITY; 
+    mediaefit.fitmelhor=-1*INFINITY; 
     mediaefit.media=0;
 
     for(i=0;i<tamanhodapopulacao;i++){ //Escolhe o melhor adaptado baseado no maior valor na função f(x)=5-abs(x-42)
         // atual=5-(fabs(populacao[i]-42)); Função ali
 
-        mediaefit.media+=populacao[i];
-
         atual=(2*cos(0.039*populacao[i]) + 5*sin(0.05*populacao[i]) + 0.5*cos(0.01*populacao[i]) + 10*sin(0.07*populacao[i]) + 5*sin(0.1*populacao[i]) + 5*sin(0.035*populacao[i]))*10+500;
 
-        if(atual>mediaefit.melhor){
-            mediaefit.melhor=atual;
+        mediaefit.media+=atual;
+
+        if(atual>mediaefit.fitmelhor){
+            mediaefit.fitmelhor=atual;
             indice=i;
         } 
         
     }
-
-    mediaefit.melhor=populacao[indice]; // Retorna o melhor de todos e a media
+    // Retorna o melhor de todos e a media (o fit ja foi calculado acima)
+    mediaefit.melhor=populacao[indice]; 
     mediaefit.media=mediaefit.media/tamanhodapopulacao; 
+    
 
     return mediaefit;
 }
@@ -233,13 +235,17 @@ int main(void){
 
     MEDIAEFIT mediaefit;
 
-    FILE* fp=NULL;
+    FILE* plotgeracoes=NULL;
+    FILE* plotmedia=NULL;
+    FILE* plotmelhor=NULL;
 
     srand(time(NULL)); // Inicialização da semente para gerações randômicas
 
     populacao=inicia_populacao(TAMANHO_DA_POPULACAO); //Iniciza uma população com elementos aleatórios entre 0 e 1000
 
-    fp=fopen("Dados para Plot","w");
+    plotgeracoes=fopen("GeracoesparaPlot.txt","w");
+    plotmedia=fopen("MediaparaPlot.txt","w");
+    plotmelhor=fopen("MelhorparaPlot.txt","w");
 
     antigomelhor=busca_melhor(populacao,TAMANHO_DA_POPULACAO).melhor;
 
@@ -297,8 +303,11 @@ int main(void){
 
             }
 
-        printf("Geracao %d - Melhor adaptado = %lf\n",geracao,mediaefit.melhor); // Printa os resultados
-        fprintf(fp,"%d,%lf,%lf",geracao,mediaefit.melhor,mediaefit.media); //Plotar: Nr de gerações - Fit do melhor de todos - Média da população
+        printf("Geracao %d - Melhor adaptado = %lf com fit = %lf\n",geracao,mediaefit.melhor,mediaefit.fitmelhor); // Printa os resultados
+        //Plotar: Nr de gerações - Fit do melhor de todos - Média da população
+        fprintf(plotgeracoes,"%d\n",geracao);
+        fprintf(plotmedia,"%lf\n",mediaefit.media);
+        fprintf(plotmelhor,"%lf\n",mediaefit.fitmelhor);
         geracao++;
         
 
@@ -389,7 +398,9 @@ int main(void){
 
         if(populacao!=NULL) free(populacao);
 
-        fclose(fp);
+        fclose(plotgeracoes);
+        fclose(plotmedia);
+        fclose(plotmelhor);
 
     return 0;
 }
