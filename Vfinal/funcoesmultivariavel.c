@@ -10,7 +10,7 @@
 #include <stdlib.h> // Para alocação dinâmica
 #include <string.h> // Para manipular strings e setar memória
 #include <time.h> // Para conseguir o tempo atual do sistema como uma chave randômica
-#include <math.h> // Para calcular mais fácilmente as funções complexas
+#include <math.h> // Para calcular mais fácilmente algumas funções
 #include "tinyexpr.h" // Para avaliar expressoes
 
 #define GNUPLOT "gnuplot -persist" // Para abrir o GNU PLOT: caso não esteja instalado usar: sudo apt install gnuplot
@@ -19,6 +19,10 @@
 #define boolean unsigned char 
 #define TRUE 1
 #define FALSE 0
+
+//definição de máximos e mínimos para 2 valores
+#define max(a,b) ((a) > (b) ? (a) : (b))
+#define min(a,b) ((a) < (b) ? (a) : (b))
 
 #define TAMANHO_MAXIMO_DA_EXPRESSAO 500 // Define um tamanho máximo para a expressao a ser computada
 #define TAMANHO_MAXIMO_POR_VARIAVEL 10 // Define um tamanho máximo para o nome de cada variável.
@@ -61,27 +65,27 @@
 
 //Essa estrutura permite que uma função retorne 3 informações importantíssimas para o algoritmo
 struct mediaefit_{
-    double fitmedia;    // O Fitness médio da população (=Somatório de todos os fitness/numero de elementos da população)
     double* medias;     // A media dos elementos de cada variável populacao. (para cada variável =Somatorio de todos os individuos/numero de elementos)
     double* fitness;    // Contem todos os fitness dos elementos da populacao
+    double fitmedia;    // O Fitness médio da população (=Somatório de todos os fitness/numero de elementos da população)
     int indicemelhor;   // O indice do melhor indivíduo da população 
     int indicepior;     // O indice do pior indivíduo da população 
 };
 
-struct qualquerfuncao_{ // Estrutura que aloca tudo necessário para computar uma função de n variáveis
+struct qualquerfuncao_{                 // Estrutura que aloca tudo necessário para computar uma função de n variáveis
 
     int quantasvariaveis;               // Armazena o número de variáveis de uma função.
     char** nomesdasvariaveis;           // Armazena o nome de cada uma das variáveis (x,y,z,a,j,ab,etc)
-    char* expressao;                    // Armazena a expressão a ser computada: Ex: X+Y ou X-|42|;
+    char* expressao;                    // Armazena a expressão a ser computada: Ex: X+Y ou 42-|X|;
     double* limitesinferiores;          // Vetor de limites inferiores para convergência das variáveis
     double* limitessuperiores;          // Vetor de limites superiores para convergência das variáveis
-    boolean minmax;                     // Variavel para escolher se o algoritmo vai buscar mínimos ou máximos{ TRUE = MAX, FALSE = MIN}
+    boolean minmax;                     // Variavel para escolher se o algoritmo vai buscar mínimos ou máximos{TRUE = MAX, FALSE = MIN}
     te_variable* variaveisdabiblioteca; // Armazena um vetor de variáveis aos modelos da biblioteca tinyexpr
     te_expr* expressaodabiblio;         // Armazena a expressão aos modelos da biblioteca tinyexpr
     int errofuncao;                     // Variável que armazena se ocorreu um erro ao computadar uma função.
 };
 
-struct ponteirosfile_{
+struct ponteirosfile_{                  //Estrutura de ponteiros para lidar com arquivos
 
     /*4 ponteiros do tipo file para escrever os dados em 4 arquivos diferentes: 1 com o numero da geração, 
     Outro com o melhor individuo outro com o fitmedio e outro com o fitdomelhor. 
@@ -102,7 +106,7 @@ typedef struct mediaefit_ MEDIAEFIT; // Definição de um tipo dessa estrutura. 
 
 typedef struct qualquerfuncao_ FUNCAO; // Idem para função
 
-typedef struct ponteirosfile_ PONTEIROSFILE;
+typedef struct ponteirosfile_ PONTEIROSFILE;  // E o mesmo para os ponteiros file
 
 //Obs: Como o programa busca encontrar minimos/máximos em funções, é fácil relacionar (e as vezes confundir) o fitness com o elemento em si.
 //O elemento nesse caso seriam os X's, Y's... da função, e seu fitness seria o valor de f(x,y,...), sendo a F a escolhida na execução do programa.
@@ -120,26 +124,29 @@ FUNCAO* funcao = NULL;     //Ponteiro para uma estrutura de funcao. Essa que ser
 
 //Definições das funções (e o que elas devem fazer) -> Facilita o trabalho do compilador e resume tudo que você precisa saber da função só de olhar aqui em cima.
 
-double* AlocaVetordouble(int tamanhomaximo); //Função que aloca um vetor double de tamanho "tamanhomaximo". Usada para alocar novas populações.
+double* AlocaVetordouble(int tamanhomaximo); //Função que aloca um vetor double de tamanho "tamanhomaximo".
+double** AlocaVetordouble2(int tamanhomaximo); //Função que aloca um vetor de ponteiros para double de tamanho "tamanhomaximo".
+char* AlocaVetorchar(int tamanhomaximo); //Função que aloca um vetor de chars de tamanho "tamanhomaximo".
+char** AlocaVetorchar2(int tamanhomaximo); //Função que aloca um vetor de ponteiros para chars de tamanho "tamanhomaximo".
 
-PONTEIROSFILE* inicia_ponteirosfile(void);
 
-void plota_grafico(PONTEIROSFILE* files);
+PONTEIROSFILE* inicia_ponteirosfile(void); // Função que abre os arquivos FILE e os deixa prontos para a escrita.
 
-void anota_resultados(PONTEIROSFILE* files,MEDIAEFIT* mediaefit, int geracao);
+void anota_resultados(PONTEIROSFILE* files,MEDIAEFIT* mediaefit, int geracao); // Função que pega os resultados guardados em MEDIAEFIT e "anotam" eles nos arquivos em disco.
 
-void fecha_arquivos(PONTEIROSFILE** files);
+void plota_grafico(PONTEIROSFILE* files); // Função que pega os arquivos, salva eles definitivamente e usa os arquivos gerados para plotar um gráfico usando o GNUplot.
+
+void fecha_arquivos(PONTEIROSFILE** files); // Função que fecha os arquivos que estiverem abertos.
 
 unsigned char menu(char opcoespalavra[50]); // Converte uma string de entrada em uma opção de menu.
 
-void pega_funcao_inicial(void);
-
+void pega_funcao_inicial(void); // Função que recebe os dados do usuário e os aloca e coloca no ponteiro GLOBAL funcao.
 
 double** inicia_populacao(void); // Função que inicializa a população com indivíduos aleatórios utilizando a variavel global de TAMANHO_DA_POPULACAO 
 
 void genocida(double** populacao, double* melhordetodos, int* contadorpredacao); //Função bem semelhante a de iniciar a população, porém, mantém o melhor de todos no 1 slot e considera um vetor já alocado. Além de resetar o contador de predacao
 
-double** redefine_tamanho(double** populacao, int novotamanhodapop);  /* Função perigosa!
+double** redefine_tamanho(double** populacao, MEDIAEFIT* mediaefit, int novotamanhodapop);  /* Função perigosa!
 
                     Recebe um vetor já alocado de indivíduos e tamanho TAMANHO_DA_POPULACAO que deve ser redefinido para um vetor de tamanho novotamanhodapop
                     Detalhes: O valor da variável TAMANHO_DA_POPULACAO é alterado para novotamanhodapop
@@ -152,19 +159,19 @@ void redefine_funcao(void); // Redefine a função escolhida (via entrada padrã
   
 MEDIAEFIT* busca_melhor(double** populacao, MEDIAEFIT* mediaefitantigo);  /* 
 Função de avaliação: Ela percorre a população avaliando cada indivíduo, armazenando na estrutura MEDIAEFIT os seguintes dados:
+     O fitness dew cada indivíduo da população
+     O valor médio de cada variável da função (para fazer coisas como predação por síntese)
      O Fitness médio da população (=Somatório de todos os fitness/numero de elementos da população)
      O indice do vetor do melhor de todos, ou seja, qual dos elementos da população é o melhor?
      O indice do vetor do pior de todos, ou seja, qual dos elementos da população é o pior?
-     O Fitness do melhor de todos  
-     O valor médio de cada variável da função (para fazer coisas como predação por síntese)
-    Para isso ela recebe os individuos da população, a função a ser avaliada e a avaliação antiga (para reutilizar a memória, se possível).
+     Para isso ela recebe os individuos da população, a função a ser avaliada e a avaliação antiga (para reutilizar a memória, se possível).
 */    
 
-double avalia_funcao(double* valoresdasvariaveis);
+double avalia_funcao(double* valoresdasvariaveis); // Função que recebe um elemento da população (com n variáveis) e usa a funcao global para avaliar o valor da função nesse ponto.
 
-void imprimefits(double* populacao, int qualfuncao); // Imprime todos os fits de uma populacao (faz uma avaliação)
+void imprimefits(double* fits) // Imprime todos os fits de uma populacao
 
-void preda(double** populacao,int* contadorpredacao, int indicepiorelemento, double* mediadapopulacao, int tipodepredacao); // Aqui é feita a predação, excluindo o pior elemento da população (a cada ) e o substituindo por um novo aleatório
+void preda(double** populacao,int* contadorpredacao, int indicepiorelemento, double* mediadapopulacao, int tipodepredacao); // Aqui é feita a predação, excluindo o pior elemento da população (a cada n gerações) e o substituindo por um novo aleatório
 
 double* da_uma_mutada(double* variaveisparamutar); // Função que recebe um individuo da populacao e aplica uma mutação em porcentagem definida pela variavel global PORCENTAGEM_DE_MUTACAO
 
@@ -173,8 +180,6 @@ double* da_uma_mutada(double* variaveisparamutar); // Função que recebe um ind
 void mutaEmata(double** populacao, double* melhor, double fitmelhor , double* fitantigomelhor, int* contador,int* contadorpredacao, boolean mutacaoadaptativa, boolean genocidio); 
 
 void reproducao(double** populacao, MEDIAEFIT* mediaefit, int mododereproducao);
-
-double max (double a, double b); // Função que retorna o maior valor entre a e b;
 
 double geraaleatorio(double limiteinferior, double limitesuperior); // Retorna um valor aleatório dentro de um intervalo e com até 5 casas decimais
 
@@ -185,6 +190,36 @@ double* AlocaVetordouble(int tamanhomaximo){
 
     resultado=(double*)malloc(sizeof(double)*tamanhomaximo);
     if(resultado==NULL){printf("Erro na alocação do vetor double - Espaço Insuficiente");exit(1);}
+    
+
+    return resultado;
+}
+
+double** AlocaVetordouble2(int tamanhomaximo){
+    double** resultado=NULL;
+
+    resultado=(double**)malloc(sizeof(double*)*tamanhomaximo);
+    if(resultado==NULL){printf("Erro na alocação do vetor double - Espaço Insuficiente");exit(1);}
+    
+
+    return resultado;
+}
+
+char* AlocaVetorchar(int tamanhomaximo){
+    char* resultado=NULL;
+
+    resultado=(char*)malloc(sizeof(char)*tamanhomaximo);
+    if(resultado==NULL){printf("Erro na alocação do vetor char - Espaço Insuficiente");exit(1);}
+    
+
+    return resultado;
+}
+
+char** AlocaVetorchar2(int tamanhomaximo){
+    char** resultado=NULL;
+
+    resultado=(char**)malloc(sizeof(char*)*tamanhomaximo);
+    if(resultado==NULL){printf("Erro na alocação do vetor char - Espaço Insuficiente");exit(1);}
     
 
     return resultado;
@@ -202,16 +237,15 @@ PONTEIROSFILE* inicia_ponteirosfile(void){
     files->plotmelhor=fopen("MelhorparaPlot.txt","w");
     files->plotfitmelhor=fopen("MelhorfitparaPlot.txt","w");
 
+    // Abre o terminal para visualização dos gráficos (necessario no meu PC, que usa VcXServer no windows WSL para funções gráficas - explicado melhor no manual)
+    files->comandosnormais=popen("export DISPLAY=localhost:0","w");
+    fclose(files->comandosnormais);
+
     //Abre o GNUPLOT
     files->comandosgnuplot=popen("gnuplot -persist","w");
     if (files->comandosgnuplot == NULL) { printf("Erro ao abrir pipe para o GNU plot.\nInstale com 'sudo apt-get install gnuplot'\n"); exit(1);}
 
-    // Abre o terminal para visualização dos gráficos (necessario no meu PC, que usa VcXServer no windows WSL para funções gráficas)
-    files->comandosnormais=popen("export DISPLAY=localhost:0","w");
-    fclose(files->comandosnormais);
-
     return files;
-
 }
 
 void anota_resultados(PONTEIROSFILE* files,MEDIAEFIT* mediaefit, int geracao){
@@ -281,26 +315,21 @@ void pega_funcao_inicial(void){ // Essa Função recebe todos os dados referente
 
         funcao->quantasvariaveis=1; // Tem 1 variável
 
-        funcao->nomesdasvariaveis=(char**)malloc(sizeof(char*)*1); // Aloca espaço para 1 variável
-             if(funcao->nomesdasvariaveis==NULL){printf("Deu erro de memoria\n"); exit(1);}
-        funcao->nomesdasvariaveis[0]=(char*)malloc(sizeof(char)*2); // De tamanho 2
-            if(funcao->nomesdasvariaveis[0]==NULL){printf("Deu erro de memoria\n"); exit(1);}
+        funcao->nomesdasvariaveis=AlocaVetorchar2(1);
+        funcao->nomesdasvariaveis[0]=AlocaVetorchar(2);
 
         strcpy(funcao->nomesdasvariaveis[0],"x"); // O nome dela é x
 
-        funcao->limitesinferiores=(double*)malloc(sizeof(double)*funcao->quantasvariaveis); // Preciso de 1 elemento para guardar o intervalo
-            if(funcao->limitesinferiores==NULL) {printf("Deu erro de memoria\n"); exit(1);}
+        funcao->limitesinferiores=AlocaVetordouble(funcao->quantasvariaveis); // Preciso de 1 elemento para guardar cada limite do intervalo
+        funcao->limitessuperiores=AlocaVetordouble(funcao->quantasvariaveis);
         
-        funcao->limitessuperiores=(double*)malloc(sizeof(double)*funcao->quantasvariaveis);
-            if(funcao->limitessuperiores==NULL) {printf("Deu erro de memoria\n"); exit(1);}
-
          printf("Agora insira o intervalo de x em que deseja buscar os ótimos:\nLIMITE INFERIOR DO INTERVALO:\n");
          scanf("%lf",&funcao->limitesinferiores[0]);
          printf("LIMITE SUPERIOR DO INTERVALO:\n");
          scanf("%lf",&funcao->limitessuperiores[0]);
 
         // A função é 5-|x-42|
-        funcao->expressao=(char*)malloc(sizeof(char)*15);
+        funcao->expressao=AlocaVetorchar(15);
         strcpy(funcao->expressao,"5-abs(x-42)");
 
         valorvalido=TRUE;
@@ -310,18 +339,13 @@ void pega_funcao_inicial(void){ // Essa Função recebe todos os dados referente
 
         funcao->quantasvariaveis=1; // Tem 1 variável
 
-        funcao->nomesdasvariaveis=(char**)malloc(sizeof(char*)*1); // Aloca espaço para 1 variável
-             if(funcao->nomesdasvariaveis==NULL){printf("Deu erro de memoria\n"); exit(1);}
-        funcao->nomesdasvariaveis[0]=(char*)malloc(sizeof(char)*2); // De tamanho 2
-            if(funcao->nomesdasvariaveis[0]==NULL){printf("Deu erro de memoria\n"); exit(1);}
+        funcao->nomesdasvariaveis=AlocaVetorchar2(1); // Aloca espaço para 1 variável
+        funcao->nomesdasvariaveis[0]=AlocaVetorchar(2); // De tamanho 2
 
         strcpy(funcao->nomesdasvariaveis[0],"x"); // O nome dela é x
 
-        funcao->limitesinferiores=(double*)malloc(sizeof(double)*funcao->quantasvariaveis); // Preciso de 1 elemento para guardar o intervalo
-            if(funcao->limitesinferiores==NULL) {printf("Deu erro de memoria\n"); exit(1);}
-        
-        funcao->limitessuperiores=(double*)malloc(sizeof(double)*funcao->quantasvariaveis);
-            if(funcao->limitessuperiores==NULL) {printf("Deu erro de memoria\n"); exit(1);}
+        funcao->limitesinferiores=AlocaVetordouble(funcao->quantasvariaveis); // Preciso de 1 elemento para guardar cada limite do intervalo
+        funcao->limitessuperiores=AlocaVetordouble(funcao->quantasvariaveis);
 
          printf("Agora insira o intervalo de x em que deseja buscar os ótimos:\nLIMITE INFERIOR DO INTERVALO:\n");
          scanf("%lf",&funcao->limitesinferiores[0]);
@@ -329,7 +353,7 @@ void pega_funcao_inicial(void){ // Essa Função recebe todos os dados referente
          scanf("%lf",&funcao->limitessuperiores[0]);
 
         // A funcao é (2*cos(0.039*x)+5*sin(0.05*x)+0.5*cos(0.01*x)+10*sin(0.07*x)+5*sin(0.1*x)+5*sin(0.035*x))*10+500
-        funcao->expressao=(char*)malloc(sizeof(char)*100);
+        funcao->expressao=AlocaVetorchar(100);
         strcpy(funcao->expressao,"(2*cos(0.039*x)+5*sin(0.05*x)+0.5*cos(0.01*x)+10*sin(0.07*x)+5*sin(0.1*x)+5*sin(0.035*x))*10+500");
 
         valorvalido=TRUE;
@@ -339,21 +363,14 @@ void pega_funcao_inicial(void){ // Essa Função recebe todos os dados referente
 
         funcao->quantasvariaveis=2; // Tem 2 variáveis
 
-        funcao->nomesdasvariaveis=(char**)malloc(sizeof(char*)*2);
-            if(funcao->nomesdasvariaveis==NULL){printf("Deu erro de memoria\n"); exit(1);}
-        funcao->nomesdasvariaveis[0]=(char*)malloc(sizeof(char)*2);
-            if(funcao->nomesdasvariaveis[0]==NULL){printf("Deu erro de memoria\n"); exit(1);}
+        funcao->nomesdasvariaveis=AlocaVetorchar2(2);
+        funcao->nomesdasvariaveis[0]=AlocaVetorchar(2);
         strcpy(funcao->nomesdasvariaveis[0],"x");// Uma se chama x
-        funcao->nomesdasvariaveis[1]=(char*)malloc(sizeof(char)*2);
-            if(funcao->nomesdasvariaveis[1]==NULL){printf("Deu erro de memoria\n"); exit(1);}
-        strcpy(funcao->nomesdasvariaveis[1],"y"); // A outra se chama y
-        
+        funcao->nomesdasvariaveis[1]=AlocaVetorchar(2);
+        strcpy(funcao->nomesdasvariaveis[1],"y"); // A outra se chama y    
 
-        funcao->limitesinferiores=(double*)malloc(sizeof(double)*funcao->quantasvariaveis); // Preciso de 2 elementos para guardar os intervalos
-            if(funcao->limitesinferiores==NULL) {printf("Deu erro de memoria\n"); exit(1);}
-        
-        funcao->limitessuperiores=(double*)malloc(sizeof(double)*funcao->quantasvariaveis);
-            if(funcao->limitessuperiores==NULL) {printf("Deu erro de memoria\n"); exit(1);}
+        funcao->limitesinferiores=AlocaVetordouble(funcao->quantasvariaveis); // Preciso de 2 elementos para guardar cada limite do intervalo
+        funcao->limitessuperiores=AlocaVetordouble(funcao->quantasvariaveis);
 
         for(i=0;i<funcao->quantasvariaveis;i++){ // Para cada uma das variaveis
          printf("Agora insira o intervalo de %s em que deseja buscar os ótimos:\nLIMITE INFERIOR DO INTERVALO:\n",funcao->nomesdasvariaveis[i]); 
@@ -363,7 +380,7 @@ void pega_funcao_inicial(void){ // Essa Função recebe todos os dados referente
         }
 
         // A função é 10-|x-42|-|y-5|
-        funcao->expressao=(char*)malloc(sizeof(char)*100);
+        funcao->expressao=(char*)malloc(sizeof(char)*25);
         strcpy(funcao->expressao,"10-abs(x-42)-abs(y-5)");
 
         valorvalido=TRUE;
@@ -372,31 +389,26 @@ void pega_funcao_inicial(void){ // Essa Função recebe todos os dados referente
     case 4: // Se a função será inserida a mão, os valores devem ser alocados.
 
         do{
-        printf("Quantas variaveis tem a sua função?\n"); // Pega o numero de variáveis (n)
-        scanf("%d",&funcao->quantasvariaveis);
+            printf("Quantas variaveis tem a sua função?\n"); // Pega o numero de variáveis (n)
+            scanf("%d",&funcao->quantasvariaveis);
         }while(funcao->quantasvariaveis<=0);
 
-        funcao->nomesdasvariaveis=(char**)malloc(sizeof(char*)*funcao->quantasvariaveis); // Aloca espaço para n variáveis
-            if(funcao->nomesdasvariaveis==NULL){printf("Deu erro de memoria\n"); exit(1);}
+        funcao->nomesdasvariaveis=AlocaVetorchar2(funcao->quantasvariaveis); // Aloca espaço para n variáveis
 
         for(i=0;i<funcao->quantasvariaveis;i++){    //Para cada uma das n variaveis:
-        funcao->nomesdasvariaveis[i]=(char*)malloc(sizeof(char)*TAMANHO_MAXIMO_POR_VARIAVEL); // aloca espaço para a variavel
-            if(funcao->nomesdasvariaveis[i]==NULL){printf("Deu erro de memoria\n"); exit(1);}
-        printf("Qual o nome da sua variavel de numero %d?\n",i+1); // recebe o nome da variavel
-        scanf("%s",funcao->nomesdasvariaveis[i]);
+            funcao->nomesdasvariaveis[i]=AlocaVetorchar(TAMANHO_MAXIMO_POR_VARIAVEL);
+            printf("Qual o nome da sua variavel de numero %d?\n",i+1); // recebe o nome da variavel
+            scanf("%s",funcao->nomesdasvariaveis[i]);
         }
 
-        funcao->expressao=(char*)malloc(sizeof(char)*TAMANHO_MAXIMO_DA_EXPRESSAO); // Aloca espaço para a expressão
+        funcao->expressao=AlocaVetorchar(TAMANHO_MAXIMO_DA_EXPRESSAO); // Aloca espaço para a expressão
 
         printf("Qual expressão deve ser computada?\nFunções suportadas: +,-,*,/,%%,^,abs,acos,asin,atan,ceil,floor,sin,cos,tan,ln,log\n"); // Adquire a expressao
-            scanf(" %[^\n]s",funcao->expressao);
+        scanf(" %[^\n]s",funcao->expressao);
         //    printf(".%s.",funcao->expressao);
 
-        funcao->limitesinferiores=(double*)malloc(sizeof(double)*funcao->quantasvariaveis); // Preciso de 2 elementos para guardar os intervalos
-            if(funcao->limitesinferiores==NULL) {printf("Deu erro de memoria\n"); exit(1);}
-        
-        funcao->limitessuperiores=(double*)malloc(sizeof(double)*funcao->quantasvariaveis);
-            if(funcao->limitessuperiores==NULL) {printf("Deu erro de memoria\n"); exit(1);}
+        funcao->limitesinferiores=AlocaVetordouble(funcao->quantasvariaveis); // Preciso de n elementos para guardar cada limite do intervalo
+        funcao->limitessuperiores=AlocaVetordouble(funcao->quantasvariaveis);
 
         for(i=0;i<funcao->quantasvariaveis;i++){ // Para cada uma das variaveis
          printf("Agora insira o intervalo de %s em que deseja buscar os ótimos:\nLIMITE INFERIOR DO INTERVALO:\n",funcao->nomesdasvariaveis[i]); 
@@ -415,7 +427,7 @@ void pega_funcao_inicial(void){ // Essa Função recebe todos os dados referente
     }
     }    
 
-    printf("O valor a ser buscado deve ser o mínimo ou máximo da função? 0 para minimo outra coisa para máximo"); // Define se o programa vai buscar minimos ou maximos
+    printf("O valor a ser buscado deve ser o mínimo ou máximo da função? 0 para minimo outra coisa para máximo\n"); // Define se o programa vai buscar minimos ou maximos
     scanf("%d",&qualfuncao);
     if(qualfuncao==0) funcao->minmax = MIN;
     else funcao->minmax = MAX;
@@ -425,18 +437,12 @@ void pega_funcao_inicial(void){ // Essa Função recebe todos os dados referente
     return;
 }
 
-
-double max (double a, double b){
-    if(a>=b) return a;
-    else return b;
-}
-
 double geraaleatorio(double limiteinferior, double limitesuperior){ // Retorna um valor aleatório dentro de um intervalo e com até 5 casas decimais
-    printf("Limite inferiot = %lf, limite superior = %lf\n",limiteinferior,limitesuperior);
+  //  printf("Limite inferior = %lf, limite superior = %lf\n",limiteinferior,limitesuperior);
     return limiteinferior + rand()%((int)(limitesuperior - limiteinferior)) + (double)((rand()%100000)/(100000.0f));
 }
 
-double coloca_devolta_no_intervalo(double valoraseralterado, double limiteinferior, double limitesuperior){
+double coloca_devolta_no_intervalo(double valoraseralterado, double limiteinferior, double limitesuperior){ // Pega um valor fora do intervalo definido e o joga devolta tipo pac-man (passou da direita aparece na esquerda e vice versa).
 
     double decimal=valoraseralterado-floor(valoraseralterado);
 
@@ -474,17 +480,19 @@ double avalia_funcao(double* valoresdasvariaveis){ // Função que, a partir dos
 
     double valordaf;
 
-    for(j=0;j<funcao->quantasvariaveis;j++){
-        funcao->variaveisdabiblioteca->name=funcao->nomesdasvariaveis[j];
-        funcao->variaveisdabiblioteca->address=&valoresdasvariaveis[j];
+    for(j=0;j<funcao->quantasvariaveis;j++){ // Coloca na variável da biblioteca o nome e o endereço do valor das variáveis
+        funcao->variaveisdabiblioteca[j].name=funcao->nomesdasvariaveis[j];
+        funcao->variaveisdabiblioteca[j].address=&valoresdasvariaveis[j];
     }
-
+    //Compila a expressão com as variáveis
     funcao->expressaodabiblio=te_compile(funcao->expressao,funcao->variaveisdabiblioteca,funcao->quantasvariaveis,&funcao->errofuncao); // Compila a expressão, guardando todos os dados uteis dela em expressaodabiblioteca
 
+    //Avalia a função
     valordaf=te_eval(funcao->expressaodabiblio);
 
-   // printf("O valor avaliado foi : %lf\n",valordaf);
+    //printf("O valor avaliado foi : %lf\n",valordaf);
 
+    //Liberaa os valores
     te_free(funcao->expressaodabiblio);
 
     return valordaf;
@@ -496,31 +504,47 @@ double** inicia_populacao(void){
 
     double** populacao=NULL;
 
-    populacao=(double**)malloc(sizeof(double*)*TAMANHO_DA_POPULACAO);
-        if(populacao==NULL) {printf("Deu erro de memoria\n"); exit(1);}
+    populacao=AlocaVetordouble2(TAMANHO_DA_POPULACAO); // Aloca o numero de elementos da população
 
-    for(i=0;i<TAMANHO_DA_POPULACAO;i++){
+    for(i=0;i<TAMANHO_DA_POPULACAO;i++){ // Para cada elemento
 
-        populacao[i]=(double*)malloc(sizeof(double)*funcao->quantasvariaveis);
-            if(populacao[i]==NULL) {printf("Deu erro de memoria\n"); exit(1);}
-
+        populacao[i]=AlocaVetordouble(funcao->quantasvariaveis); // Aloca o número de variáveis
+    
         for(j=0;j<funcao->quantasvariaveis;j++){
-                        printf("Limite inferiot = %lf, limite superior = %lf",funcao->limitesinferiores[j],funcao->limitessuperiores[j]);
-            populacao[i][j]=geraaleatorio(funcao->limitesinferiores[i],funcao->limitessuperiores[i]);
-            printf("%s = %lf\n",funcao->nomesdasvariaveis[j],populacao[i][j]);
+
+            populacao[i][j]=geraaleatorio(funcao->limitesinferiores[j],funcao->limitessuperiores[j]); // Preenche cada uma delas com um valor aleatório dentro do seu intervalo
+            printf("%s = %lf ",funcao->nomesdasvariaveis[j],populacao[i][j]);
         }
 
+        printf("\n");
+
     }
+
+    //Imprime as condições iniciais da população
+
+    printf("A Populacao tem %d elementos e a funcao tem %d variaveis\n",TAMANHO_DA_POPULACAO,funcao->quantasvariaveis);
+
+    for(j=0;j<funcao->quantasvariaveis;j++) printf("Limite inferior de %s = %lf, limite superior de %s = %lf\n",funcao->nomesdasvariaveis[j],funcao->limitesinferiores[j],funcao->nomesdasvariaveis[j],funcao->limitessuperiores[j]);
+
+    printf("População inicial:\n");
+    for(i=0;i<TAMANHO_DA_POPULACAO;i++){
+        printf("Elemento %d: ",i);
+        for(j=0;j<funcao->quantasvariaveis;j++){
+            printf("%s = %lf ",funcao->nomesdasvariaveis[j],populacao[i][j]);
+        }
+        printf("\n");
+    }
+
 
     return populacao;
 }
 
-void genocida(double** populacao, double* melhordetodos, int* contadorpredacao){
+void genocida(double** populacao, double* melhordetodos, int* contadorpredacao){ //Função bem semelhante a de iniciar a população, porém, mantém o melhor de todos no 1 slot e considera um vetor já alocado. Além de resetar o contador de predacao
 
      int i,j;
 
      for(j=0;j<funcao->quantasvariaveis;j++){
-         populacao[0][j] = melhordetodos[j];
+         populacao[0][j] = melhordetodos[j]; // Guarda o melhor de todos na posição 0
          printf("%s do melhor de todos da geração passada = %lf ",funcao->nomesdasvariaveis[j],melhordetodos[j]);
      } 
      printf("\n");
@@ -537,49 +561,70 @@ void genocida(double** populacao, double* melhordetodos, int* contadorpredacao){
     return;
 }
 
-double** redefine_tamanho(double** populacao, int novotamanhodapop){
+double** redefine_tamanho(double** populacao, MEDIAEFIT* mediaefit, int novotamanhodapop){
     /* 
     Função perigosa! Recebe um vetor já alocado de indivíduos e tamanho TAMANHO_DA_POPULACAO que deve ser redefinido para um vetor de tamanho novotamanhodapop
+    Recebe um vetor já alocado de indivíduos e tamanho TAMANHO_DA_POPULACAO que deve ser redefinido para um vetor de tamanho novotamanhodapop
     Detalhes: O valor da variável TAMANHO_DA_POPULACAO é alterado para novotamanhodapop
     Se novotamanhodapop>TAMANHO_DA_POPULACAO(inicial) o vetor será extendido, sendo adicionado, em seu fim, novos elementos aleatórios
     Se novotamanhodapop==TAMANHO_DA_POPULACAO(inicial) nada acontece
     Se novotamanhodapop<TAMANHO_DA_POPULACAO(inicial) o melhor de todos atual é armazenado na posição 0 e os elementos finais do vetor são excluidos
     */
 
-   // int i;
+    int i,j;
 
     double** novapopulacao;
 
-/*
-
-    if(novotamanhodapop==TAMANHO_DA_POPULACAO) return populacao; // Nada acontece
+    if(novotamanhodapop==TAMANHO_DA_POPULACAO) return populacao; // Se o novo tamanho é igual o atual, nada acontece.
 
     else if(novotamanhodapop>TAMANHO_DA_POPULACAO){ 
-        novapopulacao=AlocaVetordouble(novotamanhodapop); //Novo vetor de populacao é criado
-        for(i=0;i<TAMANHO_DA_POPULACAO;i++){
-            novapopulacao[i]=populacao[i]; // Copia os elementos do vetor antigo
+
+        //Novo vetor de populacao é criado
+
+        novapopulacao=AlocaVetordouble2(novotamanhodapop);
+
+        for(i=0;i<TAMANHO_DA_POPULACAO;i++){ //Aloca e copia os elementos do vetor antigo
+            novapopulacao[i]=AlocaVetordouble(funcao->quantasvariaveis);
+            for(j=0;j<funcao->quantasvariaveis;j++){
+                novapopulacao[i][j]=populacao[i][j];
+            }
         }
+
         for(;i<novotamanhodapop;i++){ // Termina inserindo elementos aleatorios
-            novapopulacao[i] = geraaleatorio();
+            novapopulacao[i]=AlocaVetordouble(funcao->quantasvariaveis);
+            for(j=0;j<funcao->quantasvariaveis;j++){
+                novapopulacao[i][j]=geraaleatorio(funcao->limitesinferiores[j],funcao->limitessuperiores[j]);
+            }
         }
     }
 
     else{
 
-        novapopulacao=AlocaVetordouble(novotamanhodapop); //Novo vetor de populacao é criado
+        //Novo vetor de populacao é criado
 
-        novapopulacao[0]=busca_melhor(populacao,qualfuncao).melhor;
+        novapopulacao=AlocaVetordouble2(novotamanhodapop);
 
-        for(i=1;i<novotamanhodapop;i++){ 
-            if(populacao[i]!=novapopulacao[0]) novapopulacao[i]=populacao[i]; // Não duplica o melhor de todos, invés disso coloca um próximo filho
-            else novapopulacao[i] = populacao[i+1]; 
+        for(i=0;i<novotamanhodapop;i++){
+            novapopulacao[i]=AlocaVetordouble(funcao->quantasvariaveis);
+        }
+
+        //Guarda o melhor de todos na posição 0
+        for(j=0;j<funcao->quantasvariaveis;j++) novapopulacao[0][j]=populacao[mediaefit->indicemelhor][j];
+
+        for(i=1;i<novotamanhodapop;i++){ // Preenche o resto da população menor com os membros antigos da população
+            for(j=0;j<funcao->quantasvariaveis;j++) novapopulacao[i][j]=populacao[i][j];
         }
     }
 
+    //Libera a população antiga.
+
+    for(i=0;i<TAMANHO_DA_POPULACAO;i++){
+        free(populacao[i]);
+    }
+    free(populacao);
+
     TAMANHO_DA_POPULACAO=novotamanhodapop;
 
-    free(populacao);
-*/
     return novapopulacao;
 }
 
@@ -608,10 +653,8 @@ MEDIAEFIT* busca_melhor(double** populacao, MEDIAEFIT* mediaefitantigo){
 
     if(mediaefitantigo==NULL){ // Se a estrutura recebida está vazia, cria uma nova
         mediaefit=(MEDIAEFIT*)malloc(sizeof(MEDIAEFIT)); 
-        mediaefit->medias=(double*)malloc(sizeof(double)*funcao->quantasvariaveis); // Novamente, se a estrutura ainda não existe, deve ser alocada;
-            if(mediaefit->medias==NULL) {printf("Deu ruim na memo\n"); exit(1);}
-        mediaefit->fitness=(double*)malloc(sizeof(double)*TAMANHO_DA_POPULACAO);
-            if(mediaefit->fitness==NULL) {printf("Deu ruim na memo\n"); exit(1);}
+        mediaefit->medias=AlocaVetordouble(funcao->quantasvariaveis);
+        mediaefit->fitness=AlocaVetordouble(TAMANHO_DA_POPULACAO);
     } 
     else mediaefit=mediaefitantigo; // Se não, usa a antiga
 
@@ -629,8 +672,6 @@ MEDIAEFIT* busca_melhor(double** populacao, MEDIAEFIT* mediaefitantigo){
     mediaefit->fitmedia=0;
     mediaefit->indicemelhor=-1;
     mediaefit->indicepior=-1;
-
-    
 
     for(j=0;j<funcao->quantasvariaveis;j++) mediaefit->medias[j]=0; // Inicializa o valor das médias para começo do cálculo
 
@@ -677,26 +718,13 @@ MEDIAEFIT* busca_melhor(double** populacao, MEDIAEFIT* mediaefitantigo){
     return mediaefit;
 }
 
-void imprimefits(double* populacao,int qualfuncao){
+void imprimefits(double* fits){
 
     int i;
 
-       for(i=0;i<TAMANHO_DA_POPULACAO;i++){ //Escolhe o melhor adaptado baseado no maior valor na função f(x)=5-abs(x-42)
-
-        switch (qualfuncao)
-        {
-        case 1:
-            printf("Fit[%d] = %lf\n",i,5-(fabs(populacao[i]-42))); //Função que deve convergir para 42 (um bico)
-            break;
-        case 2:
-            printf("Fit[%d] = %lf\n",i,(2*cos(0.039*populacao[i]) + 5*sin(0.05*populacao[i]) + 0.5*cos(0.01*populacao[i]) + 10*sin(0.07*populacao[i]) + 5*sin(0.1*populacao[i]) + 5*sin(0.035*populacao[i]))*10+500);
-           //Função maluca com imagem feita pelo GeoGebra anexada.
-           break;
-        default:
-            break;
-        }
-       }
-    return;
+    for(i=0;i<TAMANHO_DA_POPULACAO;i++){
+        printf("fit de %d = %lf\n",i,fits[i]);
+    }   
 }
 
 void preda(double** populacao, int* contadorpredacao, int indicepiorelemento, double* mediadapopulacao, int tipodepredacao){
@@ -754,7 +782,7 @@ void mutaEmata(double** populacao, double* melhor, double fitmelhor , double* fi
  
 
         if((*fitantigomelhor)!=fitmelhor){ // Se o melhor mudou, quer dizer que melhorou (existe um novo melhor de todos), então reseta os contadores. Se não melhorou, o contador é incrementado
-            if((*contador)<4*NUMERO_DE_GERACOES_PARA_MUTAR + 1) (*contador)= (*contador) - (*contador)% + 1; //Se o programa ainda está buscando por ótimos locais, é retirado apenas as iterações desse local, o +1 é para ele não modificar a taxa novamente
+            if((*contador)<4*NUMERO_DE_GERACOES_PARA_MUTAR + 1) (*contador)= (*contador) - (*contador)%NUMERO_DE_GERACOES_PARA_MUTAR + 1; //Se o programa ainda está buscando por ótimos locais, é retirado apenas as iterações desse local, o +1 é para ele não modificar a taxa novamente
             else {
                 (*contador)=0; 
                 if(mutacaoadaptativa==TRUE) PORCENTAGEM_DE_MUTACAO = INICIAL_PORCENTAGEM_DE_MUTACAO;
@@ -808,12 +836,11 @@ void reproducao(double** populacao, MEDIAEFIT* mediaefit, int mododereproducao){
 
     case TORNEIODE2: // Função que altera todos os indivíduos da população (tierando o melhor), através de competições entre dois indivíduos da população + uma mutação aleatória definida pelo define
 
-    filhos=(double**)malloc(sizeof(double*)*(TAMANHO_DA_POPULACAO-1)); // Aloca uma matriz para alocar os filhos
-    if(filhos==NULL){ printf("Erro de memoria"); exit(1);}
+        // Aloca uma matriz para alocar os filhos
+    filhos=AlocaVetordouble2(TAMANHO_DA_POPULACAO-1);
 
     for(i=0;i<TAMANHO_DA_POPULACAO-1;i++){
-        filhos[i]=(double*)malloc(sizeof(double)*funcao->quantasvariaveis);
-        if(filhos[i]==NULL){ printf("Erro de memoria"); exit(1);}
+        filhos[i]=AlocaVetordouble(funcao->quantasvariaveis);
     }
 
     for(i=0;i<TAMANHO_DA_POPULACAO-1;i++){ //Devem ser feitos n-1 filhos (1 elemento é o melhor de todos)
@@ -987,7 +1014,7 @@ int main(void){
                 if(temp==1){
                     printf("Então insira novo numero de elementos da população - Numero atual = %d\n",TAMANHO_DA_POPULACAO);
                     scanf("%d",&temp); // Guarda o novo elemento e chama a função especializada (+ complexa, foi feita fora da main)
-                    populacao=redefine_tamanho(populacao,temp);
+                    populacao=redefine_tamanho(populacao,mediaefit,temp);
                     contadorpredacao=0;
                 }
                     
