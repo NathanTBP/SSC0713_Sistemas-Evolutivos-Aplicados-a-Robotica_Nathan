@@ -1,1 +1,32 @@
-aa
+Como utilizar a biblioteca tinyexpr para avaliar valores de funções em C:
+
+a biblioteca tinyexpr é uma alternativa não muito complexa para avaliar expressões de quantas variáveis forem preciso 
+e ainda conta recurso para funções trigonométricas, modulares e exponenciais (e até permite criar as próprias operações).
+
+Para inclui-la em seu programa, basta realizar o download pelo git oficial: https://github.com/codeplea/tinyexpr
+
+Os únicos arquivos necessários são o tinuexpr.h e o tinyexpr.c 
+
+Seu uso pode parecer um pouco estranho a primeira vista mas é de certa forma bem simples:
+
+Para analisar uma determinada função, você vai precisar de:
+
+Espaço alocado para uma variável do tipo te_expr e um vetor de variáveis do tipo te_variable 
+(esse vetor tem o número de variáveis que você quer, por exemplo, para x e y, é um vetor de tamanho 2)
+
+Em cada te_variable, é preciso inserir: o nome da variável no campo name (uma string, no caso "x" ou "y")
+                                        um endereço com o valor da variável no campo adress
+
+Além disso, é necessário uma string com a expressão a ser computada e uma variável para armazenar erros.
+
+Com tudo isso, basta compilar a função da seguinte forma
+te_expr *te_compile(char *expressao, te_variable *variables, int quantasvariaveis, int *error);
+
+E avaliar usando:
+double te_eval(const te_expr *n);
+
+AVISO DE ANTI SEG FAULT!!!
+Dica: por algum motivo, os criadores da biblioteca implementaram name como um "const char*", pra mim, isso não faz sentido, 
+já que esse nome será definido e talvez mudado no deccorrer do programa, logo, eu alterei esses dados na biblitoeca para char* normal.
+
+Qualquer dúvida, o código "exemplotinyuexpr.c" nesse repositório mostra um exemplo de isso tudo funcionando.

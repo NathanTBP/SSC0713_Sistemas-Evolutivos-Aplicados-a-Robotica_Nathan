@@ -3,11 +3,11 @@ Como utilizar o GNUplot para fazer belos gráficos para seus programas em C:
 O GNUplot é uma ferramenta open source que funciona por linhas de comando, 
 e pode fazer gráficos estilizados e bem completos com diferentes conjuntos de dados.
 
-INTALACAO LINUX
+INSTALACAO LINUX
 
-Para instalá-lo basta usar o comando: sudo apt install gnuplot
+Para instalá-lo basta usar o comando no terminal: sudo apt install gnuplot (ou algum variante dependendo da sua distribuição)
 
-Para testar, basta digitar gnuplot no terminal e se quando a janela aparecer, diigte plot sin(x) para ver se está tudo certinho.
+Para testar, basta digitar gnuplot no terminal e se quando a janela aparecer, digite plot sin(x) para ver se está tudo certinho.
 
 UTILIZAÇÃO
 
@@ -27,7 +27,7 @@ Para plotar um gráfico use:
 plot 'nomedoarquivodeentrada.txt' title 'nomedodadosendorepresentado' with lines
 
 OBS: esse arquivo de entrada deve estar no formato X Y\n para cada ponto no gráfico
-OBS2: a clausa with lines é para o gráfico ficar com linhas e não apenas pontos (outros comandos possiveis disponiveis na página 100 da documentação)
+OBS2: a clausa with lines é para o gráfico ficar com linhas e não apenas pontos (outros comandos possiveis disponiveis na página 100 da documentação anexada no fim desse doc)
 
 para plotar + de um gráfico na mesma janela, basta adicionar uma virgula no final do comando e plotar outro comando 
 
@@ -35,7 +35,7 @@ Ex:
 
 plot 'nomedoarquivodeentrada.txt' title 'nomedodadosendorepresentado' with lines, plot 'nomedoarquivodeentrada2.txt' title 'nomedodadosendorepresentado2' with lines
 
-Existem N opções de customização: cores, formatos. Para um gráfico + bonito, a série de videos no yt https://www.youtube.com/watch?v=9QUtcfyBFhE deve ajudar.
+Existem N opções de customização: cores, formatos. Para um gráfico + bonito, a série de videos no yt iniciadas por https://www.youtube.com/watch?v=9QUtcfyBFhE deve ajudar.
 
 DICAS PARA PROGRAMA EM C
 
@@ -61,7 +61,7 @@ DICAS PARA WINDOWS:
 
 Windows não tem um suporte direto a tais tipos de comando. Para isso existe como instalar um terminal de linux dentro do seu windows.
 
-Um tutorial para instalar segue aqui https://docs.microsoft.com/pt-br/windows/wsl/install-win10. Dica: instale o wsl2, é bem mais estável e possui features melhores.
+Um tutorial para instalar segue aqui https://docs.microsoft.com/pt-br/windows/wsl/install-win10. Dica: instale o wsl2, é bem mais estável e possui features melhores apra outras aplicações.
 
 Muitas vezes, o gnuplot não será mostrado na sua tela com um erro que diz algo do tipo "Tela não encontrada" para isso, eu uso um programa chamado VcXsrv
 link para download do VcXsrv https://sourceforge.net/projects/vcxsrv/
