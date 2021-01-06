@@ -169,7 +169,7 @@ Função de avaliação: Ela percorre a população avaliando cada indivíduo, a
 
 double avalia_funcao(double* valoresdasvariaveis); // Função que recebe um elemento da população (com n variáveis) e usa a funcao global para avaliar o valor da função nesse ponto.
 
-void imprimefits(double* fits) // Imprime todos os fits de uma populacao
+void imprimefits(double* fits); // Imprime todos os fits de uma populacao
 
 void preda(double** populacao,int* contadorpredacao, int indicepiorelemento, double* mediadapopulacao, int tipodepredacao); // Aqui é feita a predação, excluindo o pior elemento da população (a cada n gerações) e o substituindo por um novo aleatório
 
